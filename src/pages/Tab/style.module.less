@@ -1,0 +1,44 @@
+.tab {
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+
+    .scroll {
+        white-space: nowrap;
+
+        .item {
+            display: inline-block;
+            // vertical-align: middle;
+            padding-left: 24px;
+            padding-right: 24px;
+            line-height: 88px;
+            text-align: center;
+            font-size: 32px;
+            .title_normal {
+                color: #333;
+            }
+            .title_select {
+                color: #F83244;
+            }
+        }
+
+        .bottom_line {
+            position: absolute;
+            background-color: #F83244;
+            width: 32px;
+            height: 8px;
+            border-radius: 8px;
+            top: 80px;
+            left: 0px;
+        }
+    }
+}
+
+// ::-webkit-scrollbar {
+//     width: 0;
+//     height: 0;
+//     color: transparent;
+// }
