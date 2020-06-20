@@ -1,5 +1,5 @@
 import Taro, { Component } from '@tarojs/taro'
-import { View, Button, Text } from '@tarojs/components'
+import { View, Button } from '@tarojs/components'
 import { observer, inject } from '@tarojs/mobx'
 
 import './index.less'
@@ -12,6 +12,10 @@ class Index extends Component {
 
   config = {
     navigationBarTitleText: '首页'
+  }
+
+  state = {
+    tabIndex: 1,
   }
 
   componentWillMount () { }
@@ -28,11 +32,22 @@ class Index extends Component {
 
   componentDidHide () { }
 
+  onClickBtn = () => {
+    this.setState({
+      tabIndex: this.state.tabIndex+2
+    })
+  }
+
+  onTabChange = (e) => {
+    console.log(e.currentIndex)
+  }
+
   render () {
     const list = [...Array(20).keys()]
     return (
       <View className='index'>
-        <HLJTab itemList={list}></HLJTab>
+        <HLJTab itemList={list} currentIndex={this.state.tabIndex} onChange={this.onTabChange.bind(this)}></HLJTab>
+        <Button onClick={this.onClickBtn.bind(this)} >netTab</Button>
       </View>
     )
   }

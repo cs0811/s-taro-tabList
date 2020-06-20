@@ -11,6 +11,8 @@ class HLJTab extends Component {
 
   static defaultProps = {
     itemList: [],
+    currentIndex: 0,
+    onChange: (e) => {},
   }
 
   state = {
@@ -25,7 +27,13 @@ class HLJTab extends Component {
   componentWillReact () { }
 
   componentDidMount () { 
-    this.onItemClick(0, false)
+    this.onItemClick(this.props.currentIndex, false)
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.currentIndex != this.props.currentIndex) {
+      this.onItemClick(nextProps.currentIndex, true)
+    }
   }
 
   componentWillUnmount () { }
@@ -39,6 +47,10 @@ class HLJTab extends Component {
   }
 
   onItemClick = (index, isAnimation) => {
+    if (this.state.cIndex === index) {
+      return
+    }
+    this.props.onChange({currentIndex:index})
     const query = Taro.createSelectorQuery().in(this.$scope)
     query.select('#item'+index).boundingClientRect()
     query.select('#tab').boundingClientRect()
@@ -54,13 +66,12 @@ class HLJTab extends Component {
           })
           animation.translateX(this.cScrollLeft+centerX-6).step()
           this.setState({
-            // cIndex: index,
+            cIndex: index,
             // cCenter: this.cScrollLeft+centerX-tabInfo.width/2.,
             animationData: animation.step()
           }, () => {
             setTimeout(() => {
               this.setState({
-                cIndex: index,
                 cCenter: this.cScrollLeft+centerX-tabInfo.width/2.,
               })
             },250)
