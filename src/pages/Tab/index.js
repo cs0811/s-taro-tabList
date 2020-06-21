@@ -8,6 +8,8 @@ import styles from './style.module.less'
 @observer
 class HLJTab extends Component {
   cScrollLeft = 0.
+  tabInfo = {}
+  isAnimaiton = false
 
   static defaultProps = {
     itemList: [],
@@ -26,14 +28,17 @@ class HLJTab extends Component {
 
   componentWillReact () { }
 
-  componentDidMount () { 
-    this.onItemClick(this.props.currentIndex, false)
+  componentDidMount () {
+    this.queryItemInfoWithId('#tab', (res) => {
+      this.tabInfo = res
+    })()
+    this.onItemClick(this.props.currentIndex, false, true)
   }
 
   componentWillReceiveProps (nextProps) {
-    if (nextProps.currentIndex != this.props.currentIndex) {
-      this.onItemClick(nextProps.currentIndex, true)
-    }
+    // if (nextProps.currentIndex != this.props.currentIndex) {
+      this.onItemClick(nextProps.currentIndex, true, false)
+    // }
   }
 
   componentWillUnmount () { }
@@ -46,43 +51,64 @@ class HLJTab extends Component {
     this.cScrollLeft = e.detail.scrollLeft
   }
 
-  onItemClick = (index, isAnimation) => {
-    if (this.state.cIndex === index) {
+  debounce(fn, interval) {
+    let timeout = null;     // timeout占位
+    return function () {    // 返回闭包函数 timeout保留作用域
+      clearTimeout(timeout);  // 先清除上一个timeout
+      timeout = setTimeout(() => {    //重新给timeout赋值，interval时间之后执行cb
+        fn.apply(this, arguments);
+      }, interval);
+    };
+  }
+
+  queryItemInfoWithId = (id, fn) => {
+    const query = Taro.createSelectorQuery().in(this.$scope)
+    return function() {
+      query.select(id).boundingClientRect()
+      query.exec((res) => {
+        fn.apply(this, res);
+      })
+    }
+  }
+
+  onItemClick = (index, isAnimation, canCallOut) => {
+    if (this.state.cIndex === index || this.isAnimaiton) {
       return
     }
-    this.props.onChange({currentIndex:index})
-    const query = Taro.createSelectorQuery().in(this.$scope)
-    query.select('#item'+index).boundingClientRect()
-    query.select('#tab').boundingClientRect()
-    query.exec((res) => {
-        console.log(res)
-        const cItemInfo = res[0]
-        let centerX = (cItemInfo.left + cItemInfo.right)/2.
-        const tabInfo = res[1]
-        if (centerX != tabInfo.width/2.) {
-          let animation = Taro.createAnimation({
-            duration: isAnimation?200:0,
-            timingFunction: 'ease-in-out',
-          })
-          animation.translateX(this.cScrollLeft+centerX-6).step()
-          this.setState({
-            cIndex: index,
-            // cCenter: this.cScrollLeft+centerX-tabInfo.width/2.,
-            animationData: animation.step()
-          }, () => {
-            setTimeout(() => {
-              this.setState({
-                cCenter: this.cScrollLeft+centerX-tabInfo.width/2.,
-              })
-            },250)
-          })
-          
-        } else {
-          this.setState({
-            cIndex: index,
-          })
-        }
-    })
+    if (canCallOut) {
+      this.props.onChange({currentIndex:index})
+    }
+    this.queryItemInfoWithId('#item'+index, (res) => {
+      const cItemInfo = res
+      let centerX = (cItemInfo.left + cItemInfo.right)/2.
+      if (centerX != this.tabInfo.width/2.) {
+        let animation = Taro.createAnimation({
+          duration: isAnimation?200:0,
+          timingFunction: 'ease-in-out',
+        })
+        animation.translateX(this.cScrollLeft+centerX-6).step()
+        this.isAnimaiton = true
+        this.setState({
+          cIndex: index,
+          animationData: animation.step(),
+        }, () => {
+          this.debounce(() => {
+            this.setState({
+              cCenter: this.cScrollLeft+centerX-this.tabInfo.width/2.,
+            }, () => {
+              this.debounce(() => {
+                this.isAnimaiton = false
+              },300)()
+            })
+          },300)()
+        })
+        
+      } else {
+        this.setState({
+          cIndex: index,
+        })
+      }
+    })()
 
   }
 
@@ -101,7 +127,7 @@ class HLJTab extends Component {
         }
         return (
             <View className={styles.item} style={itemStyle} 
-            onClick={this.onItemClick.bind(this, index, true)}
+            onClick={this.onItemClick.bind(this, index, true, true)}
             id={'item'+index}
             >
               <View 
