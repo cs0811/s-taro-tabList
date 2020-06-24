@@ -140,6 +140,8 @@ class Index extends Component {
       if (realItem) {
         const itemId = realItem.id
         const tabIndex = itemId.split('item')[1]
+        console.log('scrollindex  '+ tabIndex)
+
         if (this.tabIndex != tabIndex) {
           this.tabIndex = tabIndex
           if (this.isStaticTop) {
@@ -183,6 +185,8 @@ class Index extends Component {
         }
 
         this.isStaticTop = true
+
+        console.log('tabindex  '+ e.currentIndex)
 
         this.tabIndex = e.currentIndex
         this.setState({

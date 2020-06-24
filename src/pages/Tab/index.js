@@ -8,6 +8,7 @@ class HLJTab extends Component {
   tabInfo = {}
   isLoadFirst = false
   cIndex = 0
+  itemsInfoArr = []
 
   static defaultProps = {
     itemList: [],
@@ -31,12 +32,18 @@ class HLJTab extends Component {
     this.queryItemInfoWithId('#tab', (res) => {
       this.tabInfo = res
     })
-    this.onItemClick(this.props.currentIndex, false, false, true)
+    this.queryAllItemsInfo(() => {
+      console.log('===  '+ this.props.currentIndex)
+      this.onItemClick(this.props.currentIndex, false, false, true)
+    })
+
   }
 
   componentWillReceiveProps (nextProps) {
     // if (nextProps.currentIndex != this.props.currentIndex) {
       this.onItemClick(nextProps.currentIndex, true, false, true)
+      console.log('---  '+ nextProps.currentIndex)
+
     // }
   }
 
@@ -53,42 +60,57 @@ class HLJTab extends Component {
   queryItemInfoWithId = (id, fn) => {
     const query = Taro.createSelectorQuery().in(this.$scope)
     query.select(id).boundingClientRect()
-    query.select('#list').scrollOffset()
     query.exec((res) => {
       fn.apply(this, res);
     })
   }
 
+  queryAllItemsInfo = (fn) => {
+    const query = Taro.createSelectorQuery().in(this.$scope)
+    const {itemList} = this.props;
+    const queryitemsInfoArr = itemList.map((item, index) => {
+      return '#item' + index
+    })
+    queryitemsInfoArr.forEach((item) => {
+      query.select(item).boundingClientRect()
+    })
+    query.exec((res) => {
+      if (res.length <= 0) {
+        return
+      }
+      for (var item of res) {
+        this.itemsInfoArr.push({left:item.left, right:item.right})
+      }
+      fn.apply(this, res);
+    })
+  }
+
   onItemClick = (index, isAnimation, canCallOut, forceLoad) => {
+
+    if (this.itemsInfoArr.length <= 0) {
+      return
+    }
     if (this.cIndex == index && !forceLoad) {
       return
     }
     if (canCallOut) {
       this.props.onChange({currentIndex:index})
     }
-    const query = Taro.createSelectorQuery().in(this.$scope)
-    query.select('#item'+index).boundingClientRect()
-    query.select('#list').scrollOffset()
-    query.exec((res) => {
-      const cItemInfo = res[0]
-      if (!cItemInfo) {
-        return
-      }
-      this.cIndex = index
-      this.isLoadFirst = true
-      const cScrollLeft = res[1].scrollLeft
-      let centerX = (cItemInfo.left + cItemInfo.right)/2.
-      let animation = Taro.createAnimation({
-        duration: (isAnimation && centerX != this.tabInfo.width/2.)?250:0,
-        timingFunction: 'ease-in-out',
-      })
-      
-      centerX = cScrollLeft+centerX
-      animation.translateX(centerX-9).step()
-      this.setState({
-        animationData: animation.export(),
-        cCenter: centerX-this.tabInfo.width/2.,
-      })
+    const cItemInfo = this.itemsInfoArr[index]
+    this.cIndex = index
+    this.isLoadFirst = true
+    const cScrollLeft = 0
+    let centerX = (cItemInfo.left + cItemInfo.right)/2.
+    let animation = Taro.createAnimation({
+      duration: (isAnimation && centerX != this.tabInfo.width/2.)?250:0,
+      timingFunction: 'ease-in-out',
+    })
+    
+    centerX = cScrollLeft+centerX
+    animation.translateX(centerX-9).step()
+    this.setState({
+      animationData: animation.export(),
+      cCenter: centerX-this.tabInfo.width/2.,
     })
   }
 
