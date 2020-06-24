@@ -1,31 +1,42 @@
 .index {
-    background-color: orange;
+    background-color: #fff;
+    width: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
 
-    .top {
-        margin-top: 0px;
-        height: 168px;
-        .btn {
-            height: 80px;
-        }
-    }
-
-    .list {
-        height: 100px;
-        text-align: center;
+    .tab {
+        width: 100%;
+        height: 88px;
+        visibility: hidden;
         position: absolute;
-        top: 88px;
-        z-index: -1;
-        background-color: saddlebrown;
-        .top {
-            height: 80px;
-        }
-        .item {
-            height: 140px;
-            border-width: 2px;
-            border-style: solid;
-            border-color: pink;
-        }
+        z-index: 20;
     }
-}
+  
+    .list {
+        height: 100%;
+        text-align: center;
+        .list_top {
+            height: 388px;
+            .list_top {
+                height: 300px;
+            }
+            .list_top_tab {
+                display: flex;
+                flex-direction: row;
+                visibility: visible;
+                z-index: 15;
+            }
+            .item {
+                height: 300px;
+            }
+        }
+        // .safeArea {
+        //   height: constant(safe-area-inset-bottom);
+        //   height: env(safe-area-inset-bottom);
+        //   background: #fff;
+        // }
+    }
+  }
+
+    

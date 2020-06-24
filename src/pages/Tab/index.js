@@ -1,25 +1,22 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, Text , ScrollView} from '@tarojs/components'
-import { observer, inject } from '@tarojs/mobx'
-
+import { observer } from '@tarojs/mobx'
 import styles from './style.module.less'
 
-@inject('counterStore')
 @observer
 class HLJTab extends Component {
-  cScrollLeft = 0.
   tabInfo = {}
-  isAnimaiton = false
-  timeout = null
+  isLoadFirst = false
+  cIndex = 0
 
   static defaultProps = {
     itemList: [],
     currentIndex: 0,
     onChange: (e) => {},
+    bindInfo: (e) => {},
   }
 
   state = {
-    cIndex: 0,
     cCenter: 0,
     animationData: {},
   }
@@ -30,6 +27,7 @@ class HLJTab extends Component {
   componentWillReact () { }
 
   componentDidMount () {
+    this.props.bindInfo({changeTab:this.changeTab})
     this.queryItemInfoWithId('#tab', (res) => {
       this.tabInfo = res
     })
@@ -38,28 +36,18 @@ class HLJTab extends Component {
 
   componentWillReceiveProps (nextProps) {
     // if (nextProps.currentIndex != this.props.currentIndex) {
-      this.onItemClick(nextProps.currentIndex, true, false, false)
+      this.onItemClick(nextProps.currentIndex, true, false, true)
     // }
   }
 
-  componentWillUnmount () {
-    clearTimeout(this.timeout)
-  }
+  componentWillUnmount () { }
 
   componentDidShow () { }
 
   componentDidHide () { }
 
-  onScroll = (e) => {
-    // this.cScrollLeft = e.detail.scrollLeft
-  }
-
-  debounce(fn, interval) {
-    clearTimeout(this.timeout)
-    this.timeout = setTimeout(() => {
-      this.timeout = null
-      fn.apply(this, arguments)
-    }, interval);
+  changeTab = (index) => {
+    this.onItemClick(index, true, false, false)
   }
 
   queryItemInfoWithId = (id, fn) => {
@@ -72,41 +60,36 @@ class HLJTab extends Component {
   }
 
   onItemClick = (index, isAnimation, canCallOut, forceLoad) => {
-    this.debounce(() => {
-      if (this.state.cIndex == index && !forceLoad) {
+    if (this.cIndex == index && !forceLoad) {
+      return
+    }
+    if (canCallOut) {
+      this.props.onChange({currentIndex:index})
+    }
+    const query = Taro.createSelectorQuery().in(this.$scope)
+    query.select('#item'+index).boundingClientRect()
+    query.select('#list').scrollOffset()
+    query.exec((res) => {
+      const cItemInfo = res[0]
+      if (!cItemInfo) {
         return
       }
-      this.isAnimaiton = true
-      if (canCallOut) {
-        this.props.onChange({currentIndex:index})
-      }
-
-      const query = Taro.createSelectorQuery().in(this.$scope)
-      query.select('#item'+index).boundingClientRect()
-      query.select('#list').scrollOffset()
-      query.exec((res) => {
-        const cItemInfo = res[0]
-        this.cScrollLeft = res[1].scrollLeft
-        let centerX = (cItemInfo.left + cItemInfo.right)/2.
-        let animation = Taro.createAnimation({
-          duration: (isAnimation && centerX != this.tabInfo.width/2.)?250:0,
-          timingFunction: 'ease-in-out',
-        })
-        
-        centerX = this.cScrollLeft+centerX
-        animation.translateX(centerX-6).step()
-        this.setState({
-          cIndex: index,
-          animationData: animation.export(),
-          cCenter: centerX-this.tabInfo.width/2.,
-        }, () => {
-          this.debounce(() => {
-            this.isAnimaiton = false
-          },260)
-        })
+      this.cIndex = index
+      this.isLoadFirst = true
+      const cScrollLeft = res[1].scrollLeft
+      let centerX = (cItemInfo.left + cItemInfo.right)/2.
+      let animation = Taro.createAnimation({
+        duration: (isAnimation && centerX != this.tabInfo.width/2.)?250:0,
+        timingFunction: 'ease-in-out',
       })
-    }, this.isAnimaiton?260:0)
-
+      
+      centerX = cScrollLeft+centerX
+      animation.translateX(centerX-9).step()
+      this.setState({
+        animationData: animation.export(),
+        cCenter: centerX-this.tabInfo.width/2.,
+      })
+    })
   }
 
   render () {
@@ -124,12 +107,14 @@ class HLJTab extends Component {
         }
 
         return (
-            <View className={styles.item} style={itemStyle} 
+            <View key={'item'+index}
+            className={styles.item} 
+            style={itemStyle} 
             onClick={this.onItemClick.bind(this, index, true, true, false)}
             id={'item'+index}
             >
               <View 
-              className={this.state.cIndex == index ? styles.title_select : styles.title_normal}
+              className={this.cIndex == index ? styles.title_select : styles.title_normal}
               >
                 <Text>{title}</Text>
               </View>
@@ -139,13 +124,17 @@ class HLJTab extends Component {
 
     return (
       <View className={styles.tab} id='tab'>
-        <ScrollView className={styles.scroll} 
-        scrollLeft={this.state.cCenter}
-        // onScroll={this.onScroll.bind(this)}
-        scrollX scrollWithAnimation id='list'> 
+        <ScrollView 
+          className={styles.scroll} 
+          scrollLeft={this.state.cCenter}
+          scrollX 
+          scrollWithAnimation 
+          id='list'
+          > 
           {tabList}
           <View className={styles.bottom_line} 
           animation={this.state.animationData}
+          style={{opacity:this.isLoadFirst?1:0}}
           ></View>
         </ScrollView>
       </View>
