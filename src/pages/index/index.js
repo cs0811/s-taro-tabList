@@ -13,9 +13,11 @@ class Index extends Component {
   tabH = 0
   isStaticTop = true
   offsetY = 0
-  tabIndex: 0
-  changeTab: null
-  staticChangeTab: null
+  tabIndex = 0
+  changeTab = null
+  staticChangeTab = null
+  itemsInfoArr = []
+  ignoreHandleScroll = false
 
   state = {
     viewHeight: 0,
@@ -66,22 +68,43 @@ class Index extends Component {
         reload = true
       }
       if (reload) {
-        this.setState({
-          viewHeight: this.state.viewHeight,
-        })
+        this.setState({})
       }
     })
   }
 
   autoObserveScrollTop = () => {
-    const query1 = Taro.createSelectorQuery()
-    query1.select('#list').scrollOffset()
-    query1.exec((res) => {
+    const query = Taro.createSelectorQuery()
+    query.select('#list').scrollOffset()
+    if (this.itemsInfoArr.length <= 0) {
+      const list = [...Array(60).keys()]
+      const queryArr = list.map((item, index) => {
+        return '#item' + index
+      })
+      queryArr.forEach((item) => {
+        query.select(item).boundingClientRect()
+      })
+    }
+    query.exec((res) => {
       if (!res[0]) {
         return
       }
       this.handleScrollTop(res[0].scrollTop)
+      if (this.itemsInfoArr.length <= 0) {
+        if (res.length <= 1) {
+          return
+        }
+        res.forEach((item, index) => {
+          if (index != 0) {
+            this.itemsInfoArr.push({top:item.top, bottom:item.bottom, id:item.id})
+          }
+        })
+      }
+      if (!this.ignoreHandleScroll) {
+        this.handleScrollWithTabIndex()
+      }
     })
+
     this.debounce(() => {
       this.autoObserveScrollTop()
     }, 50)
@@ -91,7 +114,6 @@ class Index extends Component {
     if (this.scrollTop != scrollTop) {
       this.scrollTop = scrollTop
       this.handleStaticTop(true)
-      this.handleScrollWithTab()
     }
   }
 
@@ -106,56 +128,39 @@ class Index extends Component {
       this.isStaticTop = true
     }
     if (oldStaticTop != this.isStaticTop && shouldReload) {
-      this.setState({
-        viewHeight: this.state.viewHeight,
-      })
+      this.setState({})
     }
   }
 
-  handleScrollWithTab = () => {
-    const query = Taro.createSelectorQuery()
-    const list = [...Array(60).keys()]
-    const queryArr = list.map((item, index) => {
-      return '#item' + index
-    })
-    queryArr.forEach((item) => {
-      query.select(item).boundingClientRect()
-    })
-    query.exec((res) => {
-      if (res.length <= 0) {
-        return
+  handleScrollWithTabIndex = () => {
+    let realItem
+    if (this.scrollTop <= this.posterH) {
+      realItem = this.itemsInfoArr[0]
+    } else {
+      for (var item of this.itemsInfoArr) {
+        if ((this.scrollTop-this.posterH)>=item.top && (this.scrollTop-this.posterH)<item.bottom) {
+          realItem = item
+          break
+        }
       }
-      let realItem
-      if (res[0].top >= this.tabH) {
-        realItem = res[0]
-      } else {
-        for (var item of res) {
-          if (Math.floor(item.top) <= this.tabH && item.bottom > this.tabH) {
-            realItem = item
-            break
+    }
+
+    if (realItem) {
+      const itemId = realItem.id
+      const tabIndex = itemId.split('item')[1]
+      if (this.tabIndex != tabIndex) {
+        this.tabIndex = tabIndex
+        if (this.isStaticTop) {
+          if (this.staticChangeTab != null) {
+            this.staticChangeTab(tabIndex)
+          }
+        } else {
+          if (this.changeTab != null) {
+            this.changeTab(tabIndex)
           }
         }
       }
-
-      if (realItem) {
-        const itemId = realItem.id
-        const tabIndex = itemId.split('item')[1]
-        console.log('scrollindex  '+ tabIndex)
-
-        if (this.tabIndex != tabIndex) {
-          this.tabIndex = tabIndex
-          if (this.isStaticTop) {
-            if (this.staticChangeTab != null) {
-              this.staticChangeTab(tabIndex)
-            }
-          } else {
-            if (this.changeTab != null) {
-              this.changeTab(tabIndex)
-            }
-          }
-        }
-      }
-    })
+    }
   }
 
   tabBindInfo = (e) => {
@@ -166,17 +171,13 @@ class Index extends Component {
   }
 
   onTabChange = (e) => {
+    if (this.itemsInfoArr.length <= 0) {
+      return
+    }
     if (this.tabIndex != e.currentIndex) {
-      const query = Taro.createSelectorQuery()
-      query.select('#item' + e.currentIndex).boundingClientRect()
-      query.exec((res) => {
-        const item = res[0]
-        if (!item) {
-          return
-        }
-
+        const item = this.itemsInfoArr[e.currentIndex]
         const oldOffsetY = this.offsetY
-        this.offsetY = this.scrollTop + item.top - this.tabH
+        this.offsetY = this.posterH + item.top
         this.offsetY = Math.ceil(this.offsetY)
         this.offsetY += 1 // 安卓手机大屏上可能存在的误差
         if (this.offsetY == oldOffsetY) {
@@ -185,14 +186,12 @@ class Index extends Component {
         }
 
         this.isStaticTop = true
-
-        console.log('tabindex  '+ e.currentIndex)
-
         this.tabIndex = e.currentIndex
-        this.setState({
-          viewHeight: this.state.viewHeight,
-        })
-      })
+        this.ignoreHandleScroll = true
+        this.setState({})
+        setTimeout(() => {
+          this.ignoreHandleScroll = false
+        }, 300);
     }
   }
 
@@ -211,7 +210,7 @@ class Index extends Component {
   render() {
     const list = [...Array(60).keys()]
     const cellList = list.map((item, index) => {
-      return <View itemData={list[index]} key={'theme' + index} id={'item' + index} className={styles.item}>item</View>
+      return <View itemData={list[index]} key={'theme' + index} id={'item' + index} className={styles.item}>{item}</View>
     })
     const titlList = list.map((item) => {
       return item

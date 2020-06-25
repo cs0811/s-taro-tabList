@@ -9,6 +9,7 @@ class HLJTab extends Component {
   isLoadFirst = false
   cIndex = 0
   itemsInfoArr = []
+  isClick = false
 
   static defaultProps = {
     itemList: [],
@@ -22,8 +23,7 @@ class HLJTab extends Component {
     animationData: {},
   }
 
-  componentWillMount () { 
-  }
+  componentWillMount () { }
 
   componentWillReact () { }
 
@@ -33,17 +33,12 @@ class HLJTab extends Component {
       this.tabInfo = res
     })
     this.queryAllItemsInfo(() => {
-      console.log('===  '+ this.props.currentIndex)
-      this.onItemClick(this.props.currentIndex, false, false, true)
     })
-
   }
 
   componentWillReceiveProps (nextProps) {
     // if (nextProps.currentIndex != this.props.currentIndex) {
-      this.onItemClick(nextProps.currentIndex, true, false, true)
-      console.log('---  '+ nextProps.currentIndex)
-
+      this.onItemClick(nextProps.currentIndex, true, false, false)
     // }
   }
 
@@ -85,13 +80,19 @@ class HLJTab extends Component {
     })
   }
 
-  onItemClick = (index, isAnimation, canCallOut, forceLoad) => {
-
+  onItemClick = (index, isAnimation, canCallOut, isClick) => {
     if (this.itemsInfoArr.length <= 0) {
       return
     }
-    if (this.cIndex == index && !forceLoad) {
+    if (this.cIndex == index && this.isLoadFirst) {
       return
+    }
+    if (isClick) {
+      this.isClick = true
+      setTimeout(() => {
+        this.isClick = false
+        this.setState({})
+      }, 250);
     }
     if (canCallOut) {
       this.props.onChange({currentIndex:index})
@@ -99,14 +100,11 @@ class HLJTab extends Component {
     const cItemInfo = this.itemsInfoArr[index]
     this.cIndex = index
     this.isLoadFirst = true
-    const cScrollLeft = 0
     let centerX = (cItemInfo.left + cItemInfo.right)/2.
     let animation = Taro.createAnimation({
       duration: (isAnimation && centerX != this.tabInfo.width/2.)?250:0,
       timingFunction: 'ease-in-out',
     })
-    
-    centerX = cScrollLeft+centerX
     animation.translateX(centerX-9).step()
     this.setState({
       animationData: animation.export(),
@@ -132,7 +130,7 @@ class HLJTab extends Component {
             <View key={'item'+index}
             className={styles.item} 
             style={itemStyle} 
-            onClick={this.onItemClick.bind(this, index, true, true, false)}
+            onClick={this.isClick?null:this.onItemClick.bind(this, index, true, true, true)}
             id={'item'+index}
             >
               <View 
