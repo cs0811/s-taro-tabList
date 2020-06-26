@@ -1,13 +1,14 @@
 import Taro, { Component } from '@tarojs/taro'
 import { View, ScrollView } from '@tarojs/components'
 import { observer } from '@tarojs/mobx'
-import HLJTab from '../Tab'
+import HLJSlideTab from '../Tab'
 import styles from './style.module.less'
 
 
 @observer
 class Index extends Component {
   timeout = null
+  tabTimeOut = null
   scrollTop = 0
   posterH = 0
   tabH = 0
@@ -189,7 +190,7 @@ class Index extends Component {
         this.tabIndex = e.currentIndex
         this.ignoreHandleScroll = true
         this.setState({})
-        setTimeout(() => {
+        this.tabDebounce(() => {
           this.ignoreHandleScroll = false
         }, 300);
     }
@@ -199,6 +200,14 @@ class Index extends Component {
     clearTimeout(this.timeout)
     this.timeout = setTimeout(() => {
       this.timeout = null
+      fn.apply(this, arguments)
+    }, interval)
+  }
+
+  tabDebounce(fn, interval) {
+    clearTimeout(this.tabTimeOut)
+    this.tabTimeOut = setTimeout(() => {
+      this.tabTimeOut = null
       fn.apply(this, arguments)
     }, interval)
   }
@@ -236,13 +245,13 @@ class Index extends Component {
               className={styles.list_top_tab}
               style={{visibility:this.posterH != 0?'visible':'hidden'}}
             >
-              <HLJTab
+              <HLJSlideTab
                 itemList={titlList}
                 currentIndex={this.tabIndex}
                 onChange={this.onTabChange.bind(this)}
                 bindInfo={this.tabBindInfo.bind(this)}
                 id="tab"
-              ></HLJTab>
+              ></HLJSlideTab>
             </View>
           </View>
           {list.length > 0 && (
@@ -258,12 +267,12 @@ class Index extends Component {
           className={styles.tab}
           style={{ height: this.tabH + 'px', visibility: this.isStaticTop ? 'visible' : 'hidden' }}
         >
-          <HLJTab
+          <HLJSlideTab
             itemList={titlList}
             currentIndex={this.tabIndex}
             onChange={this.onTabChange.bind(this)}
             bindInfo={this.staticTabBindInfo.bind(this)}
-          ></HLJTab>
+          ></HLJSlideTab>
         </View>
         
       </View>

@@ -4,7 +4,7 @@ import { observer } from '@tarojs/mobx'
 import styles from './style.module.less'
 
 @observer
-class HLJTab extends Component {
+class HLJSlideTab extends Component {
   tabInfo = {}
   isLoadFirst = false
   cIndex = 0
@@ -14,8 +14,8 @@ class HLJTab extends Component {
   static defaultProps = {
     itemList: [],
     currentIndex: 0,
-    onChange: (e) => {},
-    bindInfo: (e) => {},
+    onChange: (e) => {}, // 主动点击tab之后返回信息
+    bindInfo: (e) => {}, // 创建时返回changeTab方法
   }
 
   state = {
@@ -88,11 +88,12 @@ class HLJTab extends Component {
       return
     }
     if (isClick) {
+      // 点击间隔
       this.isClick = true
       setTimeout(() => {
         this.isClick = false
         this.setState({})
-      }, 250);
+      }, 100);
     }
     if (canCallOut) {
       this.props.onChange({currentIndex:index})
@@ -162,4 +163,4 @@ class HLJTab extends Component {
   }
 }
 
-export default HLJTab 
+export default HLJSlideTab
