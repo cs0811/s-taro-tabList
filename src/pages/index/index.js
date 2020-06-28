@@ -163,15 +163,18 @@ class Index extends Component {
       const tabIndex = itemId.split('item')[1]
       if (this.tabIndex != tabIndex) {
         this.tabIndex = tabIndex
-        // if (this.isStaticTop) {
+        if (this.isStaticTop) {
           if (this.staticChangeTab != null) {
-            this.staticChangeTab(tabIndex)
+            this.staticChangeTab(tabIndex, true)
           }
-        // } else {
           if (this.changeTab != null) {
-            this.changeTab(tabIndex)
+            this.changeTab(tabIndex, false)
           }
-        // }
+        } else {
+          if (this.changeTab != null) {
+            this.changeTab(tabIndex, true)
+          }
+        }
       }
     }
   }

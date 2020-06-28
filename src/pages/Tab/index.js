@@ -58,8 +58,8 @@ class HLJSlideTab extends Component {
 
   componentDidHide () { }
 
-  changeTab = (index) => {
-    this.onItemClick(index, true, false, false)
+  changeTab = (index, isAnimation) => {
+    this.onItemClick(index, isAnimation, false, false)
   }
 
   queryItemInfoWithId = (id, fn) => {
