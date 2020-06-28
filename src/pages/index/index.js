@@ -65,10 +65,12 @@ class Index extends Component {
         this.posterH = posterInfo.height
         this.handleStaticTop(false)
         reload = true
+        this.itemsInfoArr = []
       }
       if (this.tabH != tabInfo.height) {
         this.tabH = tabInfo.height
         reload = true
+        this.itemsInfoArr = []
       }
       if (reload) {
         this.setState({})
@@ -97,9 +99,14 @@ class Index extends Component {
         if (res.length <= 1) {
           return
         }
+        const firstTop = res[1].top
         res.forEach((item, index) => {
-          if (index != 0) {
-            this.itemsInfoArr.push({top:item.top, bottom:item.bottom, id:item.id})
+          if (index != 0 && item) {
+            this.itemsInfoArr.push({
+              top: item.top - firstTop,
+              bottom: item.bottom - firstTop,
+              id: item.id,
+            })
           }
         })
       }
@@ -110,7 +117,7 @@ class Index extends Component {
 
     this.debounce(() => {
       this.autoObserveScrollTop()
-    }, 50)
+    }, 20)
   }
 
   handleScrollTop = (scrollTop) => {
@@ -141,7 +148,10 @@ class Index extends Component {
       realItem = this.itemsInfoArr[0]
     } else {
       for (var item of this.itemsInfoArr) {
-        if ((this.scrollTop-this.posterH)>=item.top && (this.scrollTop-this.posterH)<item.bottom) {
+        if (
+          this.scrollTop - this.posterH > item.top &&
+          this.scrollTop - this.posterH <= item.bottom
+        ) {
           realItem = item
           break
         }
@@ -153,15 +163,15 @@ class Index extends Component {
       const tabIndex = itemId.split('item')[1]
       if (this.tabIndex != tabIndex) {
         this.tabIndex = tabIndex
-        if (this.isStaticTop) {
+        // if (this.isStaticTop) {
           if (this.staticChangeTab != null) {
             this.staticChangeTab(tabIndex)
           }
-        } else {
+        // } else {
           if (this.changeTab != null) {
             this.changeTab(tabIndex)
           }
-        }
+        // }
       }
     }
   }
@@ -194,7 +204,7 @@ class Index extends Component {
         this.setState({})
         this.tabDebounce(() => {
           this.ignoreHandleScroll = false
-        }, 300);
+        }, 350);
     }
   }
 
@@ -245,7 +255,10 @@ class Index extends Component {
             {<View id="poster">11111</View>}
             <View 
               className={styles.list_top_tab}
-              style={{visibility:this.posterH != 0?'visible':'hidden'}}
+              style={{
+                visibility: this.posterH != 0 ? 'visible' : 'hidden',
+                top: this.posterH + 'px',
+              }}
             >
               <HLJSlideTab
                 itemList={titlList}
