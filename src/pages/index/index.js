@@ -35,6 +35,8 @@ class Index extends Component {
   componentWillUnmount() {
     clearTimeout(this.timeout)
     this.timeout = null
+    clearTimeout(this.tabTimeOut)
+    this.tabTimeOut = null
   }
 
   componentDidMount() {
