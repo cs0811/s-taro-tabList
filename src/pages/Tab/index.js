@@ -5,11 +5,13 @@ import styles from './style.module.less'
 
 @observer
 class HLJSlideTab extends Component {
+  timeout = null
   tabInfo = {}
   isLoadFirst = false
   cIndex = 0
   itemsInfoArr = []
   isClick = false
+  edgeSpace = 4
 
   static defaultProps = {
     itemList: [],
@@ -32,17 +34,25 @@ class HLJSlideTab extends Component {
     this.queryItemInfoWithId('#tab', (res) => {
       this.tabInfo = res
     })
-    this.queryAllItemsInfo(() => {
-    })
   }
 
   componentWillReceiveProps (nextProps) {
+    if (this.props.itemList.length > 0 && this.itemsInfoArr.length <= 0) {
+      this.debounce( () => {
+        this.queryAllItemsInfo(() => {
+          this.onItemClick(nextProps.currentIndex, true, false, false)
+        })
+      }, 50)
+    }
     // if (nextProps.currentIndex != this.props.currentIndex) {
       this.onItemClick(nextProps.currentIndex, true, false, false)
     // }
   }
 
-  componentWillUnmount () { }
+  componentWillUnmount () {
+    clearTimeout(this.timeout)
+    this.timeout = null
+  }
 
   componentDidShow () { }
 
@@ -73,11 +83,24 @@ class HLJSlideTab extends Component {
       if (res.length <= 0) {
         return
       }
+      if (res[0] && res[0].left != this.edgeSpace) {
+        return
+      }
       for (var item of res) {
-        this.itemsInfoArr.push({left:item.left, right:item.right})
+        if (item) {
+          this.itemsInfoArr.push({left:item.left, right:item.right})
+        }
       }
       fn.apply(this, res);
     })
+  }
+
+  debounce(fn, interval) {
+    clearTimeout(this.timeout)
+    this.timeout = setTimeout(() => {
+      this.timeout = null
+      fn.apply(this, arguments)
+    }, interval)
   }
 
   onItemClick = (index, isAnimation, canCallOut, isClick) => {
@@ -93,7 +116,7 @@ class HLJSlideTab extends Component {
       setTimeout(() => {
         this.isClick = false
         this.setState({})
-      }, 100);
+      }, 150);
     }
     if (canCallOut) {
       this.props.onChange({currentIndex:index})
@@ -119,11 +142,11 @@ class HLJSlideTab extends Component {
         let itemStyle = {}
         if (index == 0) {
           itemStyle = {
-            marginLeft: '4px'
+            marginLeft: this.edgeSpace+'px'
           }
         } else if (index == itemList.length-1) {
           itemStyle = {
-            marginRight: '4px'
+            marginRight: this.edgeSpace+'px'
           }
         }
 
